@@ -7,25 +7,6 @@ try:
 except ImportError:
     from distutils.core import setup
 
-from setuptools.command.test import test as TestCommand
-
-
-class PyTest(TestCommand):
-
-    # problem w/ test_kademlia_protocol.py
-    # user_options = [('timeout=', '5', "timeout tests after 5 seconds")]
-
-    def finalize_options(self):
-        TestCommand.finalize_options(self)
-        self.test_args = []
-        self.test_suite = True
-
-    def run_tests(self):
-        # import here, cause outside the eggs aren't loaded
-        import pytest
-        errno = pytest.main(self.test_args)
-        raise SystemExit(errno)
-
 
 readme = open('README.rst').read()
 history = open('HISTORY.rst').read().replace('.. :changelog:', '')
@@ -35,7 +16,7 @@ install_requires_replacements = {}
 install_requires = [install_requires_replacements.get(r, r) for r in install_requires]
 
 test_requirements = [
-    'pytest',
+    'pytest==2.8.7',
     'pytest-catchlog==1.1',
     'pytest-timeout==0.5'
 ]
@@ -70,6 +51,6 @@ setup(
         'Programming Language :: Python :: 3.3',
         'Programming Language :: Python :: 3.4',
     ],
-    cmdclass={'test': PyTest},
+    setup_requires=['pytest-runner>2.0,<3'],
     tests_require=test_requirements
 )
