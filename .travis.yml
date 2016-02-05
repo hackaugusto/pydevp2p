@@ -23,8 +23,10 @@ install:
         "$PYENV_ROOT/bin/pyenv" install --skip-existing "pypy-$PYPY_VERSION"
         virtualenv --python="$PYENV_ROOT/versions/pypy-$PYPY_VERSION/bin/python" "$HOME/virtualenvs/pypy-$PYPY_VERSION"
         source "$HOME/virtualenvs/pypy-$PYPY_VERSION/bin/activate"
+        pip install pytest
       fi
   - pip install -U pip
+  - pip uninstall -y py pytest
   - pip install -r requirements.txt
   - pip install coveralls
 
