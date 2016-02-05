@@ -6,6 +6,10 @@ python:
   - "pypy"
   #- "pypy3"
 
+cache:
+  directories:
+    - $HOME/.cache/pip
+
 install:
   - |
       if [ "$TRAVIS_PYTHON_VERSION" = "pypy" ]; then
