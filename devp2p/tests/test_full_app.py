@@ -166,8 +166,14 @@ class TestFullApp:
 
         ExampleServiceIncCounter.testdriver = TestDriver()
 
-        app_helper.run(ExampleApp, ExampleServiceIncCounter,
-                       num_nodes=num_nodes, min_peers=num_nodes-1, max_peers=num_nodes-1)
+        app_helper.run(
+            ExampleApp,
+            ExampleServiceIncCounter,
+            num_nodes=num_nodes,
+            min_peers=num_nodes-1,
+            max_peers=num_nodes-1,
+            random_port=True  # Use a random port to avoid 'Address already in use' errors
+        )
 
 
 @pytest.mark.timeout(10)
