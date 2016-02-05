@@ -10,10 +10,10 @@ import copy
 
 
 def get_connected_apps():
-    a_config = dict(p2p=dict(listen_host='127.0.0.1', listen_port=3000),
+    a_config = dict(p2p=dict(listen_host='127.0.0.1', listen_port=3005),
                     node=dict(privkey_hex=crypto.sha3('a').encode('hex')))
     b_config = copy.deepcopy(a_config)
-    b_config['p2p']['listen_port'] = 3001
+    b_config['p2p']['listen_port'] = 3006
     b_config['node']['privkey_hex'] = crypto.sha3('b').encode('hex')
 
     a_app = BaseApp(a_config)
@@ -110,7 +110,7 @@ def test_dumb_peer():
 
 
 def connect_go():
-    a_config = dict(p2p=dict(listen_host='127.0.0.1', listen_port=3000),
+    a_config = dict(p2p=dict(listen_host='127.0.0.1', listen_port=3010),
                     node=dict(privkey_hex=crypto.sha3('a').encode('hex')))
 
     a_app = BaseApp(a_config)
