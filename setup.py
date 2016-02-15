@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-
 try:
     from setuptools import setup, find_packages
 except ImportError:
@@ -11,20 +10,23 @@ from setuptools.command.test import test as TestCommand
 
 
 class PyTest(TestCommand):
+    # http://pytest.org/latest/goodpractices.html#manual-integration
+    user_options = [('pytest-args=', 'a', "Arguments to pass to py.test")]
 
-    # problem w/ test_kademlia_protocol.py
-    # user_options = [('timeout=', '5', "timeout tests after 5 seconds")]
-
-    def finalize_options(self):
-        TestCommand.finalize_options(self)
-        self.test_args = []
-        self.test_suite = True
+    def initialize_options(self):
+        TestCommand.initialize_options(self)
+        self.pytest_args = []
 
     def run_tests(self):
         # import here, cause outside the eggs aren't loaded
         import pytest
         errno = pytest.main(self.test_args)
         raise SystemExit(errno)
+
+    def finalize_options(self):
+        TestCommand.finalize_options(self)
+        self.test_args = []
+        self.test_suite = True
 
 
 readme = open('README.rst').read()

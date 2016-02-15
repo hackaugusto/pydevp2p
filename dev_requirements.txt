@@ -1,0 +1,5 @@
+-r requirements.txt
+
+pytest
+pytest-catchlog==1.1
+pytest-timeout==0.5
