@@ -1,51 +1,119 @@
-from devp2p import discovery
-from devp2p import kademlia
-from devp2p import crypto
-from devp2p.app import BaseApp
+# -*- coding: utf8 -*-
 import gevent
 import random
+import sys
+
+import pytest
+
+from devp2p.app import BaseApp
+from devp2p import crypto
+from devp2p import discovery
+from devp2p import kademlia
 
 random.seed(42)
 
-###############################
+
+def test_address_validate_type_udp():
+    Address = discovery.Address
+
+    with pytest.raises(TypeError):
+        Address('127.0.0.1', None)
+
+    with pytest.raises(TypeError):
+        Address('127.0.0.1', '')
+
+    with pytest.raises(TypeError):
+        Address('127.0.0.1', '1')
+
+    with pytest.raises(TypeError):
+        Address('127.0.0.1', u'1')
+
+    with pytest.raises(TypeError):
+        Address('127.0.0.1', b'1')
+
+    with pytest.raises(TypeError):
+        Address('127.0.0.1', [])
+
+    with pytest.raises(TypeError):
+        Address('127.0.0.1', {})
+
+    with pytest.raises(TypeError):
+        Address('127.0.0.1', float())
 
 
-def test_address():
+def test_address_validate_type_tcp():
+    Address = discovery.Address
+
+    with pytest.raises(TypeError):
+        Address('127.0.0.1', 30303, None)
+
+    with pytest.raises(TypeError):
+        Address('127.0.0.1', 30303, '')
+
+    with pytest.raises(TypeError):
+        Address('127.0.0.1', 30303, '1')
+
+    with pytest.raises(TypeError):
+        Address('127.0.0.1', 30303, u'1')
+
+    with pytest.raises(TypeError):
+        Address('127.0.0.1', 30303, b'1')
+
+    with pytest.raises(TypeError):
+        Address('127.0.0.1', 30303, [])
+
+    with pytest.raises(TypeError):
+        Address('127.0.0.1', 30303, {})
+
+    with pytest.raises(TypeError):
+        Address('127.0.0.1', 30303, float())
+
+
+def test_address_validate_value_udp():
+    Address = discovery.Address
+
+    with pytest.raises(ValueError):
+        Address('127.0.0.1', -1)
+
+    with pytest.raises(ValueError):
+        Address('127.0.0.1', -sys.maxint - 1)
+
+    with pytest.raises(ValueError):
+        Address('127.0.0.1', 2 ** 16)
+
+
+def test_address_validate_value_tcp():
+    Address = discovery.Address
+
+    with pytest.raises(ValueError):
+        Address('127.0.0.1', 30303, -1)
+
+    with pytest.raises(ValueError):
+        Address('127.0.0.1', 30303, -sys.maxint - 1)
+
+    with pytest.raises(ValueError):
+        Address('127.0.0.1', 30303, 2 ** 16)
+
+
+def test_address_host_ipv4():
     Address = discovery.Address
 
     ipv4 = '127.98.19.21'
+    assert Address(ipv4, 30303) == Address(ipv4, 30303)
+
+
+def test_address_host_ipv6():
+    Address = discovery.Address
+
     ipv6 = '5aef:2b::8'
-    hostname = 'localhost'
-    port = 1
+    assert Address(ipv6, 30303) == Address(ipv6, 30303)
 
-    a4 = Address(ipv4, port)
-    aa4 = Address(ipv4, port)
-    assert a4 == aa4
-    a6 = Address(ipv6, port)
-    aa6 = Address(ipv6, port)
-    assert a6 == aa6
 
-    b_a4 = a4.to_binary()
-    assert a4 == Address.from_binary(*b_a4)
+def test_address_host_resolution():
+    Address = discovery.Address
 
-    b_a6 = a6.to_binary()
-    assert len(b_a6) == 3
-    assert a6 == Address.from_binary(*b_a6)
+    assert Address('localhost', 30303).ip in ('127.0.0.1', '::1')
 
-    e_a4 = a4.to_endpoint()
-    assert a4 == Address.from_endpoint(*e_a4)
-
-    e_a6 = a6.to_endpoint()
-    assert a6 == Address.from_endpoint(*e_a6)
-
-    assert len(b_a6[0]) == 16
-    assert len(b_a4[0]) == 4
-    assert isinstance(b_a6[1], str)
-
-    host_a = Address(hostname, port)
-    assert host_a.ip in ("127.0.0.1", "::1")
-
-#############################
 
 class AppMock(object):
     pass
@@ -86,43 +154,6 @@ class NodeDiscoveryMock(object):
             if to_address == self.address:
                 del self.messages[i]
                 self.receive(from_address, message)
-
-
-def test_packing():
-    """
-    https://github.com/ethereum/go-ethereum/blob/develop/crypto/secp256k1/secp256.go#L299
-    https://github.com/ethereum/go-ethereum/blob/develop/p2p/discover/udp.go#L343
-    """
-
-    # get two DiscoveryProtocol instances
-    alice = NodeDiscoveryMock(host='127.0.0.1', port=1, seed='alice').protocol
-    bob = NodeDiscoveryMock(host='127.0.0.1', port=1, seed='bob').protocol
-
-    for cmd_id in alice.cmd_id_map.values():
-        payload = ['a', ['b', 'c']]
-        message = alice.pack(cmd_id, payload)
-        r_pubkey, r_cmd_id, r_payload, mdc = bob.unpack(message)
-        assert r_cmd_id == cmd_id
-        assert r_payload == payload
-        assert len(r_pubkey) == len(alice.pubkey)
-        assert r_pubkey == alice.pubkey
-
-
-def test_ping_pong():
-    alice = NodeDiscoveryMock(host='127.0.0.1', port=1, seed='alice')
-    bob = NodeDiscoveryMock(host='127.0.0.2', port=2, seed='bob')
-
-    bob_node = alice.protocol.get_node(bob.protocol.pubkey, bob.address)
-    alice.protocol.kademlia.ping(bob_node)
-    assert len(NodeDiscoveryMock.messages) == 1
-    # inspect message in queue
-    msg = NodeDiscoveryMock.messages[0][2]
-    remote_pubkey, cmd_id, payload, mdc = bob.protocol.unpack(msg)
-    assert cmd_id == alice.protocol.cmd_id_map['ping']
-    bob.poll()  # receives ping, sends pong
-    assert len(NodeDiscoveryMock.messages) == 1
-    alice.poll()  # receives pong
-    assert len(NodeDiscoveryMock.messages) == 0
 
 
 # ############ test with real UDP ##################
