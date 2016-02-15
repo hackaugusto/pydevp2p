@@ -52,4 +52,12 @@ class SloggingTest(LoggingTest):
     def test_slogging_kwargs(self):
         """Test patched kwargs support"""
         self.log.info("Test kwargs:", number=1, f=2.3, comment='works!')
-        self.expect_log("Test kwargs: comment=works! number=1 f=2.3\n")
+
+        self.handler.flush()
+        log = self.stream.getvalue().rstrip()
+
+        # testing each element individually because the order changes
+        self.assertTrue("Test kwargs:" in log)
+        self.assertTrue("comment=works!" in log)
+        self.assertTrue("number=1" in log)
+        self.assertTrue("f=2.3" in log)
