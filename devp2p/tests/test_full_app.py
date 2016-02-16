@@ -1,13 +1,19 @@
-import pytest
+# -*- coding: utf8 -*-
 import os
-import time
-import copy
-import inspect
-from devp2p import app_helper
-from devp2p.app_helper import mk_privkey
-from devp2p.peermanager import PeerManager
-from devp2p.examples.full_app import Token, ExampleService, ExampleProtocol, ExampleApp
+
+import pytest
 import gevent
+
+from devp2p import app_helper
+from devp2p.examples.full_app import Token, ExampleService, ExampleApp
+
+
+def is_yes(value):
+    value = value.lower().strip()
+    return value in ('t', 'true', 'y', 'yes', '1')
+
+
+TRAVIS = is_yes(os.environ.get('TRAVIS', 'false'))
 
 
 class ExampleServiceIncCounter(ExampleService):
@@ -170,6 +176,7 @@ class TestFullApp:
                        num_nodes=num_nodes, min_peers=num_nodes-1, max_peers=num_nodes-1)
 
 
+@pytest.mark.skipif(TRAVIS, reason='this test is flaky and wont tear down correctly')
 @pytest.mark.timeout(10)
 def test_app_restart():
     """

@@ -110,14 +110,23 @@ def unpack_and_verify(message):
     signature_data = message[SIGNATURE_DATA]
 
     signature_data_hash = crypto.sha3(signature_data)
-    remote_pubkey = crypto.ecdsa_recover(signature_data_hash, signature)
+
+    try:
+        remote_pubkey = crypto.ecdsa_recover(signature_data_hash, signature)
+    except AssertionError:
+        log.warn('Failed to retrieve the remote pubkey')
+        return
 
     if len(remote_pubkey) != PUBKEY_LENGTH:
         log.warn('Public key with the wrong length {len}'.format(len=len(remote_pubkey)))
         return
 
-    # XXX: is it safe to just use ord?
     type_ = ord(message[TYPE_SLICE])
+
+    if type_ >= 2 ** 7:
+        log.warn('Type must be lower than 128', type=type_)
+        return
+
     payload = message[PAYLOAD_SLICE]
 
     try:
